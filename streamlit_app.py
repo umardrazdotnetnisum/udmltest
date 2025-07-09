@@ -1,103 +1,91 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
-st.title('UD ML 1st')
+st.title('🧊 Penguin Species Classifier - UD ML 1st')
 
-st.write('Hellow ML Model')
-with st.expander('data'):
- st.write('**Raw Data**')
- df = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/refs/heads/master/penguins_cleaned.csv')
- df
- 
- st.write('**X**')
- x_raw = df.drop('species',axis=1)
- x_raw
- 
- st.write('**Y**')
- y_raw = df.species
- y_raw
+st.write('Hello! This is a simple ML model to predict Penguin species.')
 
-with st.expander('Data Visulizer'):
- st.scatter_chart(data=df,x='bill_length_mm',y='body_mass_g',color='species')
+# Load the data
+df = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/refs/heads/master/penguins_cleaned.csv')
 
-# Data preparations
+# Display raw data
+with st.expander('📊 Data'):
+    st.write('**Raw Data**')
+    st.dataframe(df)
+
+    st.write('**X (Features)**')
+    x_raw = df.drop('species', axis=1)
+    st.dataframe(x_raw)
+
+    st.write('**Y (Labels)**')
+    y_raw = df['species']
+    st.dataframe(y_raw)
+
+# Data visualization
+with st.expander('📈 Data Visualizer'):
+    st.scatter_chart(data=df, x='bill_length_mm', y='body_mass_g', color='species')
+
+# Sidebar for user input
 with st.sidebar:
- st.header('Input features')
- island = st.selectbox('Island', ['Biscoe', 'Dream', 'Torgersen'])
- bill_length_mm = st.slider('Bill length (mm)', 32.1, 59.6, 43.9)
- bill_depth_mm = st.slider('Bill depth (mm)', 13.1, 21.5, 17.2)
- flipper_length_mm = st.slider('Flipper length (mm)', 172.0, 231.0, 201.0)
- body_mass_g = st.slider('Body mass (g)', 2700.0, 6300.0, 4207.0)
- gender = st.selectbox('Gender', ['male', 'female'])
+    st.header('🔧 Input Features')
+    island = st.selectbox('Island', ['Biscoe', 'Dream', 'Torgersen'])
+    bill_length_mm = st.slider('Bill length (mm)', 32.1, 59.6, 43.9)
+    bill_depth_mm = st.slider('Bill depth (mm)', 13.1, 21.5, 17.2)
+    flipper_length_mm = st.slider('Flipper length (mm)', 172.0, 231.0, 201.0)
+    body_mass_g = st.slider('Body mass (g)', 2700.0, 6300.0, 4207.0)
+    gender = st.selectbox('Gender', ['male', 'female'])
 
-# Create a DataFrame for the input features
-data = {
-    'island': island,
-    'bill_length_mm': bill_length_mm,
-    'bill_depth_mm': bill_depth_mm,
-    'flipper_length_mm': flipper_length_mm,
-    'body_mass_g': body_mass_g,
-    'sex': gender
-}
-input_df = pd.DataFrame(data, index=[0])
-input_penguins = pd.concat([input_df, x_raw], axis=0)
-
-with st.expander('Input features'):
- st.write('**Input penguin:**')
- input_df
- st.write('**Combined data:**')
- input_penguins
-
- 
-# Data preparation
-
-# Encode X
-encode = ['island', 'sex']
-df_penguins = pd.get_dummies(input_penguins, prefix=encode)
-x = df_penguins[:1]
-input_row = df_penguins[:1]
-
-# Encode y
-target_mapper = {'Adelie': 0,
-                 'Chinstrap': 1,
-                 'Gentoo': 2}
-
-def target_encode(val):
-    return target_mapper[val]
-y = y_raw.apply(target_encode)
-with st.expander('Data preparation'):
- st.write('**Encoded X (input penguin)**')
- input_row
- st.write('**Encoded y**')
- y
-
-# Model training and inference
-# Train the ML model
-clf = RandomForestClassifier()
-clf.fit(x,y)
-
-# Apply model to make predictions
-prediction = clf.predict(input_row)
-prediction_proba = clf.predict_proba(input_row)
-
-df_prediction_proba = pd.DataFrame(prediction_proba)
-df_prediction_proba.columns = ['Adelie', 'Chinstrap', 'Gentoo']
-df_prediction_proba.rename(columns={
-    0: 'Adelie',
-    1: 'Chinstrap',
-    2: 'Gentoo'
+# Create a DataFrame for the user input
+input_df = pd.DataFrame({
+    'island': [island],
+    'bill_length_mm': [bill_length_mm],
+    'bill_depth_mm': [bill_depth_mm],
+    'flipper_length_mm': [flipper_length_mm],
+    'body_mass_g': [body_mass_g],
+    'sex': [gender]
 })
 
-# Display predicted species
-st.subheader('Predicted Species')
-df_prediction_proba
+with st.expander('📥 Input Features'):
+    st.write('**User Input:**')
+    st.dataframe(input_df)
 
-penguins_species = np.array(['Adelie', 'Chinstrap', 'Gentoo'])
-st.success(str(penguins_species[prediction[0]]))
+# Feature encoding
+encode = ['island', 'sex']
+x_encoded = pd.get_dummies(x_raw, prefix=encode)
+input_encoded = pd.get_dummies(input_df, prefix=encode)
 
+# Align input features with training features
+input_encoded = input_encoded.reindex(columns=x_encoded.columns, fill_value=0)
 
+# Encode target labels
+target_mapper = {'Adelie': 0, 'Chinstrap': 1, 'Gentoo': 2}
+y = y_raw.map(target_mapper)
 
+with st.expander('🧪 Encoded Data'):
+    st.write('**Encoded X (Training):**')
+    st.dataframe(x_encoded.head())
+    st.write('**Encoded y:**')
+    st.dataframe(y)
 
+# Train model
+clf = RandomForestClassifier()
+clf.fit(x_encoded, y)
 
+# Prediction
+prediction = clf.predict(input_encoded)
+prediction_proba = clf.predict_proba(input_encoded)
 
+# Prepare prediction output
+penguin_species = np.array(['Adelie', 'Chinstrap', 'Gentoo'])
+predicted_species = penguin_species[prediction[0]]
+
+# Display prediction
+st.subheader('🔍 Predicted Species')
+st.success(f'The predicted species is: **{predicted_species}**')
+
+# Display prediction probabilities
+df_prediction_proba = pd.DataFrame(prediction_proba, columns=['Adelie', 'Chinstrap', 'Gentoo'])
+st.write('**Prediction Probabilities:**')
+st.dataframe(df_prediction_proba)

@@ -1,5 +1,5 @@
 import streamlit as st
 
-st.title('🎈 App Name')
+st.title('UD ML 1st')
 
-st.write('Hello world!')
+st.write('Hellow ML Model')

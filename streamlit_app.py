@@ -46,5 +46,5 @@ with st.expander('Input features'):
  st.write('**Input penguin:**')
  input_df
  st.write('**Combined data:**')
-    input_penguins
+ input_penguins
 
